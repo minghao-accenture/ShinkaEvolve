@@ -192,3 +192,6 @@ cython_debug/
 # Local editor metadata
 .idea/
 .vscode/
+
+# Test eval temp directories (created by experiments harness)
+_test_eval_tmp/
