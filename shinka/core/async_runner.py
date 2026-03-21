@@ -1230,7 +1230,7 @@ class ShinkaEvolveRunner:
                 )
 
         except Exception as e:
-            logger.warning(f"Initial program evaluation failed: {e}")
+            logger.warning(f"Initial program evaluation failed: {e!r} ({type(e).__name__})", exc_info=True)
 
             # Still try to compute embedding even if evaluation failed
             try:

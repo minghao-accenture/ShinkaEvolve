@@ -42,7 +42,7 @@ def construct_packing():
 
     # Compute maximum valid radii for this configuration
     radii = compute_max_radii(centers)
-    return centers, radii
+    return centers, radii, np.sum(radii)
 
 
 def compute_max_radii(centers):
@@ -65,23 +65,15 @@ def compute_max_radii(centers):
         # Distance to borders
         radii[i] = min(x, y, 1 - x, 1 - y)
 
+    # Limit by distance to other circles: each pair with centers at distance d
+    # can have sum of radii at most d to avoid overlap
     for i in range(n):
         for j in range(i + 1, n):
             dist = np.sqrt(np.sum((centers[i] - centers[j]) ** 2))
-
-            # Then, limit by distance to other circles
-            # Each pair of circles with centers at distance d can have
-            # sum of radii at most d to avoid overlap
-            for i in range(n):
-                for j in range(i + 1, n):
-                    dist = np.sqrt(np.sum((centers[i] - centers[j]) ** 2))
-
-                    # If current radii would cause overlap
-                    if radii[i] + radii[j] > dist:
-                        # Scale both radii proportionally
-                        scale = dist / (radii[i] + radii[j])
-                        radii[i] *= scale
-                        radii[j] *= scale
+            if radii[i] + radii[j] > dist:
+                scale = dist / (radii[i] + radii[j])
+                radii[i] *= scale
+                radii[j] *= scale
 
     # Ensure no negative radii due to numerical issues
     radii = np.maximum(radii, 0.0)
@@ -94,7 +86,5 @@ def compute_max_radii(centers):
 # This part remains fixed (not evolved)
 def run_packing():
     """Run the circle packing constructor for n=26"""
-    centers, radii = construct_packing()
-    # Calculate the sum of radii
-    sum_radii = np.sum(radii)
+    centers, radii, sum_radii = construct_packing()
     return centers, radii, sum_radii
