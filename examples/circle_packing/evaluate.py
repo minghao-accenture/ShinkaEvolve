@@ -111,15 +111,34 @@ def aggregate_circle_packing_metrics(
 
     centers, radii, reported_sum = results[0]
 
+    # Defensive: re-validate the candidate's output before trusting the
+    # `reported_sum`. A buggy/adversarial candidate can return a malformed
+    # radii array (e.g., shape (26,26)) and a fake `reported_sum`. The
+    # outer harness (run_shinka_eval) flags `num_invalid_runs` for this
+    # case but does not zero out the aggregator's combined_score, so we
+    # compute true `sum_radii` from `radii` ourselves and zero on validation
+    # failure. Without this guard, gen 10 of run_0078-shinka produced
+    # combined_score=59.02 from a (26,26)-shaped radii array
+    # (2026-05-04 incident).
+    valid, _msg = adapted_validate_packing(results[0])
+    if valid:
+        true_sum = float(np.sum(radii))
+        combined_score = true_sum
+    else:
+        true_sum = 0.0
+        combined_score = 0.0
+
     public_metrics = {
         "centers_str": format_centers_string(centers),
         "num_circles": centers.shape[0],
     }
     private_metrics = {
         "reported_sum_of_radii": float(reported_sum),
+        "validated_sum_of_radii": true_sum,
+        "validation_passed": bool(valid),
     }
     metrics = {
-        "combined_score": float(reported_sum),
+        "combined_score": float(combined_score),
         "public": public_metrics,
         "private": private_metrics,
     }
